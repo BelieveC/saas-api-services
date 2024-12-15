@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [editingName, setEditingName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [revealedKeys, setRevealedKeys] = useState(new Set());
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchApiKeys();
@@ -29,6 +30,7 @@ export default function Dashboard() {
 
   const createApiKey = async (e) => {
     e.preventDefault();
+    setError("");
     try {
       const response = await fetch("/api/keys", {
         method: "POST",
@@ -36,11 +38,18 @@ export default function Dashboard() {
         body: JSON.stringify({ name: newKeyName }),
       });
       const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error);
+        return;
+      }
+
       setApiKeys([...apiKeys, data]);
       setNewKeyName("");
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error creating API key:", error);
+      setError("Failed to create API key");
     }
   };
 
@@ -54,18 +63,26 @@ export default function Dashboard() {
   };
 
   const updateApiKey = async (keyId) => {
+    setError("");
     try {
       const response = await fetch(`/api/keys/${keyId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: editingName }),
       });
-      const updatedKey = await response.json();
-      setApiKeys(apiKeys.map((key) => (key.id === keyId ? updatedKey : key)));
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error);
+        return;
+      }
+
+      setApiKeys(apiKeys.map((key) => (key.id === keyId ? data : key)));
       setEditingKey(null);
       setEditingName("");
     } catch (error) {
       console.error("Error updating API key:", error);
+      setError("Failed to update API key");
     }
   };
 
@@ -341,6 +358,7 @@ export default function Dashboard() {
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+                {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
               </div>
 
               <div className="flex justify-end gap-3">

@@ -20,6 +20,19 @@ export async function GET() {
 export async function POST(request) {
   try {
     const { name } = await request.json();
+
+    // Check if name already exists
+    const existingKey = Array.from(apiKeysMap.values()).find(
+      (key) => key.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (existingKey) {
+      return NextResponse.json(
+        { error: "An API key with this name already exists" },
+        { status: 409 }
+      );
+    }
+
     const newKey = {
       id: Date.now().toString(),
       name,

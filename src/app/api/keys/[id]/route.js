@@ -31,6 +31,18 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: "API key not found" }, { status: 404 });
     }
 
+    // Check if name already exists (excluding current key)
+    const nameExists = apiKeys.some(
+      (k) => k.id !== id && k.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (nameExists) {
+      return NextResponse.json(
+        { error: "An API key with this name already exists" },
+        { status: 409 }
+      );
+    }
+
     // Update only the name, preserve other properties
     apiKeys[keyIndex] = {
       ...apiKeys[keyIndex],
