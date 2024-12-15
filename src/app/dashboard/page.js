@@ -6,14 +6,13 @@ import PlanCard from "@/components/dashboard/PlanCard";
 import Dialog from "@/components/Dialog";
 import Notification from "@/components/Notification";
 import { useApiKeys } from "@/hooks/useApiKeys";
-import { apiKeyService } from "@/services/apiKeys";
 import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const {
     apiKeys,
     isLoading,
-    error,
+    error: apiError,
     fetchApiKeys,
     createApiKey,
     updateApiKey,
@@ -44,8 +43,7 @@ export default function Dashboard() {
   const handleCreateKey = async (e) => {
     e.preventDefault();
     try {
-      const newKey = await apiKeyService.create(newKeyName);
-      setApiKeys((current) => [...current, newKey]);
+      await createApiKey(newKeyName);
       setNewKeyName("");
       setIsModalOpen(false);
       showNotification("API key created successfully");
@@ -56,10 +54,7 @@ export default function Dashboard() {
 
   const handleUpdateKey = async (keyId) => {
     try {
-      const updatedKey = await apiKeyService.update(keyId, editingName);
-      setApiKeys((current) =>
-        current.map((key) => (key.id === keyId ? updatedKey : key))
-      );
+      await updateApiKey(keyId, editingName);
       setEditingKey(null);
       setEditingName("");
       showNotification("API key updated successfully");
@@ -78,10 +73,7 @@ export default function Dashboard() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await apiKeyService.delete(deleteDialog.keyId);
-      setApiKeys((current) =>
-        current.filter((key) => key.id !== deleteDialog.keyId)
-      );
+      await deleteApiKey(deleteDialog.keyId);
       showNotification("API key deleted successfully", "delete");
     } catch (error) {
       showNotification(error.message, "error");
@@ -155,6 +147,7 @@ export default function Dashboard() {
             setEditingKey(null);
             setEditingName("");
           }}
+          onEditingNameChange={setEditingName}
         />
       </div>
 
@@ -203,7 +196,9 @@ export default function Dashboard() {
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
-                {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+                {apiError && (
+                  <p className="mt-2 text-sm text-red-600">{apiError}</p>
+                )}
               </div>
 
               <div className="flex justify-end gap-3">

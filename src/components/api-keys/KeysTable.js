@@ -11,6 +11,7 @@ export default function KeysTable({
   editingName,
   onSaveEdit,
   onCancelEdit,
+  onEditingNameChange,
 }) {
   return (
     <div className="overflow-x-auto">
@@ -37,6 +38,7 @@ export default function KeysTable({
               onCopy={onCopy}
               onSaveEdit={onSaveEdit}
               onCancelEdit={onCancelEdit}
+              onEditingNameChange={onEditingNameChange}
             />
           ))}
         </tbody>

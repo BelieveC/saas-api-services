@@ -13,6 +13,7 @@ export default function KeyRow({
   onCopy,
   onSaveEdit,
   onCancelEdit,
+  onEditingNameChange,
 }) {
   return (
     <tr className="text-gray-700">
@@ -23,6 +24,7 @@ export default function KeyRow({
           editingName={editingName}
           onSaveEdit={onSaveEdit}
           onCancelEdit={onCancelEdit}
+          onEditingNameChange={onEditingNameChange}
         />
       </td>
       <td className="py-3 px-4 text-gray-500">{apiKey.usage}</td>

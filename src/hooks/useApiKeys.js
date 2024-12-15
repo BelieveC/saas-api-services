@@ -1,3 +1,4 @@
+import { apiKeyService } from "@/services/apiKeys";
 import { useCallback, useState } from "react";
 
 export function useApiKeys() {
@@ -7,8 +8,7 @@ export function useApiKeys() {
 
   const fetchApiKeys = useCallback(async () => {
     try {
-      const response = await fetch("/api/keys");
-      const data = await response.json();
+      const data = await apiKeyService.fetchAll();
       setApiKeys(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching API keys:", error);
@@ -20,15 +20,37 @@ export function useApiKeys() {
   }, []);
 
   const createApiKey = async (name) => {
-    // ... create key logic
+    try {
+      const newKey = await apiKeyService.create(name);
+      setApiKeys((current) => [...current, newKey]);
+      return newKey;
+    } catch (error) {
+      console.error("Error creating API key:", error);
+      throw error;
+    }
   };
 
   const updateApiKey = async (id, name) => {
-    // ... update key logic
+    try {
+      const updatedKey = await apiKeyService.update(id, name);
+      setApiKeys((current) =>
+        current.map((key) => (key.id === id ? updatedKey : key))
+      );
+      return updatedKey;
+    } catch (error) {
+      console.error("Error updating API key:", error);
+      throw error;
+    }
   };
 
   const deleteApiKey = async (id) => {
-    // ... delete key logic
+    try {
+      await apiKeyService.delete(id);
+      setApiKeys((current) => current.filter((key) => key.id !== id));
+    } catch (error) {
+      console.error("Error deleting API key:", error);
+      throw error;
+    }
   };
 
   return {
@@ -39,5 +61,6 @@ export function useApiKeys() {
     createApiKey,
     updateApiKey,
     deleteApiKey,
+    setApiKeys,
   };
 }
