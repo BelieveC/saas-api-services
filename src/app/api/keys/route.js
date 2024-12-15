@@ -38,7 +38,7 @@ export async function POST(request) {
 
     const newKey = {
       name,
-      key: `tvly-${Array(32)
+      key: `chai-${Array(32)
         .fill(0)
         .map(() => Math.random().toString(36)[2])
         .join("")}`,
