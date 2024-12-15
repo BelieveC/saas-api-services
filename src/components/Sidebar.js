@@ -95,7 +95,7 @@ export default function Sidebar({ isOpen, onToggle }) {
             </Link>
 
             <Link
-              href="/dashboard/playground"
+              href="/playground"
               className="flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100"
             >
               <svg
