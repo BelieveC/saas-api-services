@@ -1,9 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
-export async function GET(request, context) {
+export async function GET(request, { params }) {
   try {
-    const id = context.params.id;
+    const id = await params.id;
     const { data: key, error } = await supabase
       .from("api_keys")
       .select("*")
@@ -26,9 +26,9 @@ export async function GET(request, context) {
   }
 }
 
-export async function PATCH(request, context) {
+export async function PATCH(request, { params }) {
   try {
-    const id = context.params.id;
+    const id = await params.id;
     const { name } = await request.json();
 
     // Check if name already exists
@@ -73,9 +73,9 @@ export async function PATCH(request, context) {
   }
 }
 
-export async function DELETE(request, context) {
+export async function DELETE(request, { params }) {
   try {
-    const id = context.params.id;
+    const id = await params.id;
     const { error } = await supabase.from("api_keys").delete().eq("id", id);
 
     if (error) throw error;

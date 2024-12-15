@@ -21,18 +21,15 @@ export async function POST(request) {
   try {
     const { name } = await request.json();
 
-    // Check if name already exists
-    const { data: existingKey, error: checkError } = await supabase
+    // Check if name already exists (case-insensitive)
+    const { data: existingKeys, error: checkError } = await supabase
       .from("api_keys")
-      .select("id")
-      .ilike("name", name)
-      .single();
+      .select("name")
+      .ilike("name", name);
 
-    if (checkError && checkError.code !== "PGRST116") {
-      throw checkError;
-    }
+    if (checkError) throw checkError;
 
-    if (existingKey) {
+    if (existingKeys && existingKeys.length > 0) {
       return NextResponse.json(
         { error: "An API key with this name already exists" },
         { status: 409 }
@@ -54,7 +51,16 @@ export async function POST(request) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // Handle unique constraint violation explicitly
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { error: "An API key with this name already exists" },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
 
     return NextResponse.json(data);
   } catch (error) {
