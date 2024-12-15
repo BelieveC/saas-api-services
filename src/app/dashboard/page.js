@@ -1,7 +1,6 @@
 "use client";
 
 import Dialog from "@/components/Dialog";
-import Notification from "@/components/Notification";
 import { useEffect, useState } from "react";
 
 export default function Dashboard() {
@@ -152,8 +151,10 @@ export default function Dashboard() {
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
+      showNotification("API key copied to clipboard", "success");
     } catch (error) {
       console.error("Failed to copy text:", error);
+      showNotification("Failed to copy API key", "error");
     }
   };
 
@@ -166,43 +167,32 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
-        />
-      )}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Pages / Overview</h1>
-          <h2 className="text-3xl font-bold mt-2">Overview</h2>
-        </div>
-        <div className="flex gap-4">
-          <div className="h-2 w-2 bg-green-500 rounded-full self-center" />
-          <span className="text-green-700">Operational</span>
-        </div>
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-2">Overview</h1>
+        <p className="text-gray-600">Manage your API keys and monitor usage</p>
       </div>
 
-      {/* Current Plan Card */}
-      <div className="mb-8 rounded-xl p-6 bg-gradient-to-r from-purple-600 via-purple-400 to-amber-300">
-        <div className="flex justify-between items-start text-white mb-6">
+      {/* Current Plan Section */}
+      <div className="bg-gradient-to-br from-purple-600 to-blue-500 rounded-xl p-6 text-white mb-8">
+        <div className="flex justify-between items-center mb-4">
           <div>
-            <div className="text-sm font-medium mb-2">CURRENT PLAN</div>
-            <div className="text-3xl font-bold">Researcher</div>
+            <p className="text-sm font-medium mb-1">CURRENT PLAN</p>
+            <h2 className="text-2xl font-bold">Researcher</h2>
           </div>
-          <button className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg text-sm hover:bg-white/30 transition-colors">
+          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
             Manage Plan
           </button>
         </div>
-
-        <div className="text-white">
-          <div className="text-sm mb-1">API Limit</div>
-          <div className="bg-white/20 rounded-full h-2 mb-1">
-            <div className="bg-white rounded-full h-2 w-1/4" />
+        <div>
+          <p className="text-sm font-medium mb-1">API Limit</p>
+          <div className="w-full bg-white/20 rounded-full h-2">
+            <div
+              className="bg-white rounded-full h-2"
+              style={{ width: "24%" }}
+            />
           </div>
-          <div className="text-sm">24/1,000 Requests</div>
+          <p className="text-sm mt-1">24/1,000 Requests</p>
         </div>
       </div>
 
