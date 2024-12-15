@@ -1,20 +1,20 @@
+import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
-// Simulated database using Map for mutable storage
-const apiKeysMap = new Map([
-  [
-    "1",
-    {
-      id: "1",
-      name: "default",
-      key: "tvly-abcdefghijklmnopqrstuvwxyz123456",
-      usage: 24,
-    },
-  ],
-]);
-
 export async function GET() {
-  return NextResponse.json(Array.from(apiKeysMap.values()));
+  try {
+    const { data: apiKeys, error } = await supabase
+      .from("api_keys")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return NextResponse.json(apiKeys || []);
+  } catch (error) {
+    console.error("Error fetching API keys:", error);
+    return NextResponse.json([], { status: 500 });
+  }
 }
 
 export async function POST(request) {
@@ -22,9 +22,15 @@ export async function POST(request) {
     const { name } = await request.json();
 
     // Check if name already exists
-    const existingKey = Array.from(apiKeysMap.values()).find(
-      (key) => key.name.toLowerCase() === name.toLowerCase()
-    );
+    const { data: existingKey, error: checkError } = await supabase
+      .from("api_keys")
+      .select("id")
+      .ilike("name", name)
+      .single();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      throw checkError;
+    }
 
     if (existingKey) {
       return NextResponse.json(
@@ -34,7 +40,6 @@ export async function POST(request) {
     }
 
     const newKey = {
-      id: Date.now().toString(),
       name,
       key: `tvly-${Array(32)
         .fill(0)
@@ -42,9 +47,18 @@ export async function POST(request) {
         .join("")}`,
       usage: 0,
     };
-    apiKeysMap.set(newKey.id, newKey);
-    return NextResponse.json(newKey);
+
+    const { data, error } = await supabase
+      .from("api_keys")
+      .insert([newKey])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json(data);
   } catch (error) {
+    console.error("Error creating API key:", error);
     return NextResponse.json(
       { error: "Failed to create API key" },
       { status: 500 }
@@ -53,9 +67,20 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
-  const url = new URL(request.url);
-  const id = url.pathname.split("/").pop();
+  try {
+    const url = new URL(request.url);
+    const id = url.pathname.split("/").pop();
 
-  apiKeysMap.delete(id);
-  return NextResponse.json({ success: true });
+    const { error } = await supabase.from("api_keys").delete().eq("id", id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting API key:", error);
+    return NextResponse.json(
+      { error: "Failed to delete API key" },
+      { status: 500 }
+    );
+  }
 }

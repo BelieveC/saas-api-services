@@ -1,5 +1,7 @@
 "use client";
 
+import Dialog from "@/components/Dialog";
+import Notification from "@/components/Notification";
 import { useEffect, useState } from "react";
 
 export default function Dashboard() {
@@ -11,6 +13,12 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [revealedKeys, setRevealedKeys] = useState(new Set());
   const [error, setError] = useState("");
+  const [notification, setNotification] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState({
+    isOpen: false,
+    keyId: null,
+    keyName: null,
+  });
 
   useEffect(() => {
     fetchApiKeys();
@@ -20,12 +28,22 @@ export default function Dashboard() {
     try {
       const response = await fetch("/api/keys");
       const data = await response.json();
-      setApiKeys(data);
+
+      // Ensure we always have an array
+      setApiKeys(Array.isArray(data) ? data : []);
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching API keys:", error);
+      setApiKeys([]);
       setIsLoading(false);
     }
+  };
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
   };
 
   const createApiKey = async (e) => {
@@ -44,21 +62,43 @@ export default function Dashboard() {
         return;
       }
 
-      setApiKeys([...apiKeys, data]);
+      setApiKeys((current) => [
+        ...(Array.isArray(current) ? current : []),
+        data,
+      ]);
       setNewKeyName("");
       setIsModalOpen(false);
+      showNotification("API key created successfully");
     } catch (error) {
       console.error("Error creating API key:", error);
       setError("Failed to create API key");
     }
   };
 
-  const deleteApiKey = async (keyId) => {
+  const handleDeleteClick = (key) => {
+    setDeleteDialog({
+      isOpen: true,
+      keyId: key.id,
+      keyName: key.name,
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const keyId = deleteDialog.keyId;
     try {
-      await fetch(`/api/keys/${keyId}`, { method: "DELETE" });
-      setApiKeys(apiKeys.filter((key) => key.id !== keyId));
+      const response = await fetch(`/api/keys/${keyId}`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error("Failed to delete API key");
+      }
+      setApiKeys((current) =>
+        Array.isArray(current) ? current.filter((key) => key.id !== keyId) : []
+      );
+      showNotification("API key deleted successfully");
     } catch (error) {
       console.error("Error deleting API key:", error);
+      showNotification("Failed to delete API key", "error");
+    } finally {
+      setDeleteDialog({ isOpen: false, keyId: null, keyName: null });
     }
   };
 
@@ -77,12 +117,18 @@ export default function Dashboard() {
         return;
       }
 
-      setApiKeys(apiKeys.map((key) => (key.id === keyId ? data : key)));
+      setApiKeys((current) =>
+        Array.isArray(current)
+          ? current.map((key) => (key.id === keyId ? data : key))
+          : [data]
+      );
       setEditingKey(null);
       setEditingName("");
+      showNotification("API key updated successfully");
     } catch (error) {
       console.error("Error updating API key:", error);
       setError("Failed to update API key");
+      showNotification("Failed to update API key", "error");
     }
   };
 
@@ -121,6 +167,13 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Pages / Overview</h1>
@@ -285,7 +338,7 @@ export default function Dashboard() {
                         </button>
                       )}
                       <button
-                        onClick={() => deleteApiKey(key.id)}
+                        onClick={() => handleDeleteClick(key)}
                         className="text-gray-400 hover:text-red-600"
                         title="Delete key"
                       >
@@ -383,6 +436,16 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <Dialog
+        isOpen={deleteDialog.isOpen}
+        onClose={() =>
+          setDeleteDialog({ isOpen: false, keyId: null, keyName: null })
+        }
+        onConfirm={handleDeleteConfirm}
+        title="Delete API Key"
+        message={`Are you sure you want to delete the API key "${deleteDialog.keyName}"? This action cannot be undone.`}
+      />
     </div>
   );
 }

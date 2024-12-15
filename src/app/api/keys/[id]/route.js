@@ -1,56 +1,71 @@
+import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
-// Reference the same simulated database
-const apiKeys = [
-  {
-    id: "1",
-    name: "default",
-    key: "tvly-abcdefghijklmnopqrstuvwxyz123456",
-    usage: 24,
-  },
-];
-
-export async function GET(request, { params }) {
-  const { id } = params;
-  const key = apiKeys.find((k) => k.id === id);
-
-  if (!key) {
-    return NextResponse.json({ error: "API key not found" }, { status: 404 });
-  }
-
-  return NextResponse.json(key);
-}
-
-export async function PATCH(request, { params }) {
+export async function GET(request, context) {
   try {
-    const { id } = params;
-    const { name } = await request.json();
+    const id = context.params.id;
+    const { data: key, error } = await supabase
+      .from("api_keys")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    const keyIndex = apiKeys.findIndex((k) => k.id === id);
-    if (keyIndex === -1) {
+    if (error) throw error;
+
+    if (!key) {
       return NextResponse.json({ error: "API key not found" }, { status: 404 });
     }
 
-    // Check if name already exists (excluding current key)
-    const nameExists = apiKeys.some(
-      (k) => k.id !== id && k.name.toLowerCase() === name.toLowerCase()
+    return NextResponse.json(key);
+  } catch (error) {
+    console.error("Error fetching API key:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch API key" },
+      { status: 500 }
     );
+  }
+}
 
-    if (nameExists) {
+export async function PATCH(request, context) {
+  try {
+    const id = context.params.id;
+    const { name } = await request.json();
+
+    // Check if name already exists
+    const { data: existingKey, error: checkError } = await supabase
+      .from("api_keys")
+      .select("id")
+      .neq("id", id)
+      .ilike("name", name)
+      .single();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      throw checkError;
+    }
+
+    if (existingKey) {
       return NextResponse.json(
         { error: "An API key with this name already exists" },
         { status: 409 }
       );
     }
 
-    // Update only the name, preserve other properties
-    apiKeys[keyIndex] = {
-      ...apiKeys[keyIndex],
-      name,
-    };
+    const { data: updatedKey, error } = await supabase
+      .from("api_keys")
+      .update({ name })
+      .eq("id", id)
+      .select()
+      .single();
 
-    return NextResponse.json(apiKeys[keyIndex]);
+    if (error) throw error;
+
+    if (!updatedKey) {
+      return NextResponse.json({ error: "API key not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(updatedKey);
   } catch (error) {
+    console.error("Error updating API key:", error);
     return NextResponse.json(
       { error: "Failed to update API key" },
       { status: 500 }
@@ -58,14 +73,19 @@ export async function PATCH(request, { params }) {
   }
 }
 
-export async function DELETE(request, { params }) {
-  const { id } = params;
-  const keyIndex = apiKeys.findIndex((k) => k.id === id);
+export async function DELETE(request, context) {
+  try {
+    const id = context.params.id;
+    const { error } = await supabase.from("api_keys").delete().eq("id", id);
 
-  if (keyIndex === -1) {
-    return NextResponse.json({ error: "API key not found" }, { status: 404 });
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting API key:", error);
+    return NextResponse.json(
+      { error: "Failed to delete API key" },
+      { status: 500 }
+    );
   }
-
-  apiKeys.splice(keyIndex, 1);
-  return NextResponse.json({ success: true });
 }
