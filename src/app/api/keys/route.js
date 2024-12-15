@@ -1,34 +1,48 @@
 import { NextResponse } from "next/server";
 
-// This is just a mock implementation. In a real application, you'd want to:
-// 1. Use a proper database
-// 2. Implement proper authentication
-// 3. Add proper error handling
-// 4. Use secure key generation
-
-let apiKeys = [];
+// Simulated database using Map for mutable storage
+const apiKeysMap = new Map([
+  [
+    "1",
+    {
+      id: "1",
+      name: "default",
+      key: "tvly-abcdefghijklmnopqrstuvwxyz123456",
+      usage: 24,
+    },
+  ],
+]);
 
 export async function GET() {
-  return NextResponse.json(apiKeys);
+  return NextResponse.json(Array.from(apiKeysMap.values()));
 }
 
 export async function POST(request) {
-  const body = await request.json();
-  const newKey = {
-    id: Date.now().toString(),
-    name: body.name,
-    key: `key_${Math.random().toString(36).substr(2, 9)}`,
-    createdAt: new Date().toISOString(),
-  };
-
-  apiKeys.push(newKey);
-  return NextResponse.json(newKey);
+  try {
+    const { name } = await request.json();
+    const newKey = {
+      id: Date.now().toString(),
+      name,
+      key: `tvly-${Array(32)
+        .fill(0)
+        .map(() => Math.random().toString(36)[2])
+        .join("")}`,
+      usage: 0,
+    };
+    apiKeysMap.set(newKey.id, newKey);
+    return NextResponse.json(newKey);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to create API key" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE(request) {
   const url = new URL(request.url);
   const id = url.pathname.split("/").pop();
 
-  apiKeys = apiKeys.filter((key) => key.id !== id);
+  apiKeysMap.delete(id);
   return NextResponse.json({ success: true });
 }
