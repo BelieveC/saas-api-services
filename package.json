@@ -9,10 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@langchain/community": "^0.3.19",
+    "@langchain/core": "^0.3.23",
+    "@langchain/openai": "^0.3.14",
     "@supabase/supabase-js": "^2.47.7",
+    "langchain": "^0.3.7",
     "next": "15.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
